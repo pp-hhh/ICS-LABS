@@ -1,0 +1,305 @@
+#######################################################################
+# Test for copying block of size 63;
+#######################################################################
+	.pos 0
+main:	irmovq Stack, %rsp  	# Set up stack pointer
+
+	# Set up arguments for copy function and then invoke it
+	irmovq $63, %rdx		# src and dst have 63 elements
+	irmovq dest, %rsi	# dst array
+	irmovq src, %rdi	# src array
+	call ncopy		 
+	halt			# should halt with num nonzeros in %rax
+StartFun:
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+# 520120910022 徐一宸
+# Describe how and why you modified the baseline code.
+# 1 Loop unrolling for six time.
+# 2 Using %r10, %r11 to avoid data dependency in loop.
+# 3 If the number of value in src is less than six, than go to the 
+# nop part, which also using loop unrolling to decrease the cost 
+# of conditional jmp misprediction.
+# 4 
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+
+##################################################################
+# You can modify this portion
+	# Loop header
+	jmp Loop
+
+Loop1:
+	mrmovq (%rdi), %r10
+	mrmovq 8(%rdi), %r11
+	mrmovq 16(%rdi), %rcx
+	mrmovq 24(%rdi), %rbx
+	mrmovq 32(%rdi), %r9
+	mrmovq 40(%rdi), %r8
+
+	andq %r10, %r10
+	rmmovq %r10, (%rsi)
+	jle Loop2
+	iaddq $1, %rax
+Loop2:
+	andq %r11, %r11
+	rmmovq %r11, 8(%rsi)
+	jle Loop3
+	iaddq $1, %rax
+Loop3:
+	andq %rcx, %rcx
+	rmmovq %rcx, 16(%rsi)
+	jle Loop4
+	iaddq $1, %rax
+Loop4:
+	andq %rbx, %rbx
+	rmmovq %rbx, 24(%rsi)
+	jle Loop5
+	iaddq $1, %rax
+Loop5:
+	andq %r9, %r9
+	rmmovq %r9, 32(%rsi)
+	jle Loop6
+	iaddq $1, %rax
+Loop6:
+	andq %r8, %r8
+	rmmovq %r8, 40(%rsi)
+	jle Loop7
+	iaddq $1, %rax
+Loop7:
+	iaddq $48, %rdi
+	iaddq $48, %rsi
+Loop:
+	iaddq $-6, %rdx       # len - 6 >= 0 ?
+	jge Loop1
+
+# len <= 6
+	iaddq $6, %rdx
+	jg Nop
+	ret
+Nop:
+	mrmovq (%rdi), %r10   # get val1
+	mrmovq 8(%rdi), %r11  # get val2
+	rmmovq %r10, (%rsi)
+	andq %r10, %r10
+	jle Nop1
+	iaddq $1, %rax
+Nop1:
+	iaddq $-1, %rdx       # len--
+	jne Nop2
+	ret
+Nop2:
+	mrmovq 16(%rdi), %r10 # get val3
+	rmmovq %r11, 8(%rsi)
+	andq %r11, %r11
+	jle Nop22
+	iaddq $1, %rax
+Nop22:
+	iaddq $-1, %rdx
+	jne Nop3
+	ret
+Nop3:
+	mrmovq 24(%rdi), %r11 # get val4
+	rmmovq %r10, 16(%rsi)
+	andq %r10, %r10
+	jle Nop33
+	iaddq $1, %rax
+Nop33:
+	iaddq $-1, %rdx
+	jne Nop4
+	ret
+Nop4:
+	mrmovq 32(%rdi), %r10 # get val5
+	rmmovq %r11, 24(%rsi)
+	andq %r11, %r11
+	jle Nop44
+	iaddq $1, %rax
+Nop44:
+	iaddq $-1, %rdx
+	jne Nop5
+	ret
+Nop5:
+	rmmovq %r10, 32(%rsi)
+	andq %r10, %r10
+	jle Done
+	iaddq $1, %rax
+	
+
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */
+EndFun:
+
+###############################
+# Source and destination blocks 
+###############################
+	.align 8
+src:
+	.quad -1
+	.quad -2
+	.quad -3
+	.quad -4
+	.quad 5
+	.quad -6
+	.quad -7
+	.quad 8
+	.quad 9
+	.quad -10
+	.quad -11
+	.quad -12
+	.quad 13
+	.quad -14
+	.quad 15
+	.quad -16
+	.quad 17
+	.quad 18
+	.quad 19
+	.quad 20
+	.quad -21
+	.quad -22
+	.quad -23
+	.quad -24
+	.quad -25
+	.quad -26
+	.quad 27
+	.quad -28
+	.quad 29
+	.quad 30
+	.quad -31
+	.quad -32
+	.quad -33
+	.quad -34
+	.quad 35
+	.quad -36
+	.quad 37
+	.quad 38
+	.quad 39
+	.quad -40
+	.quad -41
+	.quad -42
+	.quad -43
+	.quad -44
+	.quad 45
+	.quad 46
+	.quad 47
+	.quad 48
+	.quad -49
+	.quad 50
+	.quad 51
+	.quad 52
+	.quad 53
+	.quad 54
+	.quad -55
+	.quad -56
+	.quad -57
+	.quad 58
+	.quad 59
+	.quad 60
+	.quad 61
+	.quad 62
+	.quad 63
+	.quad 0xbcdefa # This shouldn't get moved
+
+	.align 16
+Predest:
+	.quad 0xbcdefa
+dest:
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+	.quad 0xcdefab
+Postdest:
+	.quad 0xdefabc
+
+.align 8
+# Run time stack
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+	.quad 0
+
+Stack:

@@ -1,0 +1,49 @@
+# 
+#Execution begins at address 0
+    .pos 0
+init:   
+    irmovq Stack, %rsp
+    jmp Main
+
+.align 8
+# Source block
+src:
+    .quad 0x00a
+    .quad 0x0b0
+    .quad 0xc00
+# Destination block
+dest:
+    .quad 0x111
+    .quad 0x222
+    .quad 0x333
+
+
+Main:
+    irmovq src, %rdi
+    irmovq dest, %rsi
+    irmovq $3, %rdx
+    call copy_block
+    halt
+
+
+copy_block:
+    irmovq $8, %r8
+    irmovq $1, %rbp
+    irmovq $0, %rax
+    andq %rdx, %rdx
+    jle End
+Loop:
+    mrmovq (%rdi), %rcx  # val = *src
+    addq %r8, %rdi       # src++
+    rmmovq %rcx, (%rsi)  # *dest = val
+    addq %r8, %rsi       # dest++
+    xorq %rcx, %rax      # result ^= val
+    subq %rbp, %rdx       # len--
+    jne Loop
+    ret
+
+End:
+    ret
+
+    .pos 0x100
+Stack:

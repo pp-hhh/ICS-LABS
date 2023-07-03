@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.ejs": "html",
+			"stdio.h": "c",
+			"unistd.h": "c",
+			"getopt.h": "c"
+		}
+	}
+}

@@ -1,0 +1,43 @@
+                            | #
+                            | #Execution begins at address 0
+0x000:                      |     .pos 0
+0x000:                      | init:   
+0x000: 30f40001000000000000 |     irmovq Stack, %rsp
+0x00a: 704800000000000000   |     jmp Main
+                            | 
+                            | # Sample linked list
+0x018:                      |     .align 8
+0x018:                      | ele1:
+0x018: 0a00000000000000     |     .quad 0x00a
+0x020: 2800000000000000     |     .quad ele2
+0x028:                      | ele2:
+0x028: b000000000000000     |     .quad 0x0b0
+0x030: 3800000000000000     |     .quad ele3
+0x038:                      | ele3:
+0x038: 000c000000000000     |     .quad 0xc00
+0x040: 0000000000000000     |     .quad 0
+                            | 
+0x048:                      | Main:
+0x048: 30f71800000000000000 |     irmovq ele1, %rdi
+0x052: 805c00000000000000   |     call rsum_list
+0x05b: 00                   |     halt
+                            | 
+                            | # long rsum_list(list_ptr ls)
+0x05c:                      | rsum_list:
+0x05c: 30f00000000000000000 |     irmovq $0, %rax
+0x066: 6277                 |     andq %rdi, %rdi
+0x068: 739500000000000000   |     je End
+0x071: 50570000000000000000 |     mrmovq (%rdi), %rbp  # x = ls->val
+0x07b: 50770800000000000000 |     mrmovq 8(%rdi), %rdi # ls = ls->next
+0x085: a05f                 |     pushq %rbp
+0x087: 805c00000000000000   |     call rsum_list
+0x090: b05f                 |     popq %rbp
+0x092: 6050                 |     addq %rbp, %rax
+0x094: 90                   |     ret
+                            | 
+0x095:                      | End:
+0x095: 90                   |     ret
+                            | 
+0x100:                      |     .pos 0x100
+0x100:                      | Stack:
+                            | 
